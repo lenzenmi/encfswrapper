@@ -63,7 +63,7 @@ def run(crypt_path, mount_path, wrapped_prog):
 
     md5 = hashlib.md5()
     md5.update(mount_path.encode('utf-8'))
-    tmppath = (md5.hexdigest()[:10])
+    tmppath = (md5.hexdigest())
 
     tmp = tempfile.gettempdir()
 
@@ -79,14 +79,11 @@ def run(crypt_path, mount_path, wrapped_prog):
                 password = Tkinter_input()
             except:
                 password = Shell_input()
-            subprocess.check_output(
-                'echo "{}" | encfs --stdinpass {} {}'.format(
-                    password.password,
-                    crypt_path,
-                    mount_path
-                ),
-                shell=True
+            encfs = subprocess.Popen(
+                ['/usr/bin/encfs', '--stdinpass', crypt_path, mount_path],
+                stdin=subprocess.PIPE,
             )
+            encfs.communicate(input=password.password.encode('utf-8'))
 
         if is_mounted(mount_path):
             subprocess.call(wrapped_prog)
