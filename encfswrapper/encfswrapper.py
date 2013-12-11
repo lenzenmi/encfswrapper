@@ -1,3 +1,4 @@
+#!/bin/python3
 import tkinter
 import subprocess
 import os
@@ -60,18 +61,16 @@ def run(crypt_path, mount_path, wrapped_prog):
     crypt_path = get_path(crypt_path)
     mount_path = get_path(mount_path)
 
-    tmppath = []
-    for path in [crypt_path, mount_path]:
-        md5 = hashlib.md5()
-        md5.update(path.encode('utf-8'))
-        tmppath.append(md5.hexdigest()[:8])
+    md5 = hashlib.md5()
+    md5.update(mount_path.encode('utf-8'))
+    tmppath = (md5.hexdigest()[:10])
 
     tmp = tempfile.gettempdir()
 
     try:
         lockdir = os.path.join(
             tmp,
-            'encfs-{}{}'.format(tmppath[0], tmppath[1]))
+            'encfs-{}'.format(tmppath))
         if not os.path.isdir(lockdir):
             os.mkdir(lockdir)
         lockfile = tempfile.mkstemp('', 'encfs', lockdir)
@@ -97,6 +96,7 @@ def run(crypt_path, mount_path, wrapped_prog):
         os.remove(lockfile[1])
         if is_mounted(mount_path) and len(os.listdir(lockdir)) == 0:
             subprocess.call(['fusermount', '-u', mount_path])
+            os.rmdir(lockdir)
 
 
 def main():
