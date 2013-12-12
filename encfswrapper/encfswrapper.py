@@ -1,18 +1,28 @@
 #!/bin/python3
-import tkinter
-import subprocess
-import os
-import getpass
+'''
+A command line program to mount an encrypted encfs filesystem while another
+program executes.
+'''
 import argparse
-import tempfile
+import getpass
 import hashlib
+import os
+import subprocess
+import tempfile
+import tkinter
 
 
 class Tkinter_input(tkinter.Tk):
+    '''
+    class to get password from the user using tkinter
+
+    Attributes:
+        * password (str): the password entered by the user.
+    '''
 
     def __init__(self):
         tkinter.Tk.__init__(self)
-        self.title('encfs password')
+        self.title('encfswrapper')
         self.password = None
 
         tkinter.Label(self, text='Please enter encfs password').pack()
@@ -33,12 +43,27 @@ class Tkinter_input(tkinter.Tk):
 
 
 class Shell_input():
+    '''
+    class to get password from the user using shell
+
+    Attributes:
+        * password (str): the password entered by the user.
+    '''
 
     def __init__(self):
         self.password = getpass.getpass('Enter encfs password: ')
 
 
 def is_mounted(path):
+    '''
+    Test if the encfs mount path is in /etc/mtab.
+
+    Args:
+        * path (str): absolute path to the encfs mount
+
+    Returns:
+        * (bool): True = mounted, False = not-mounted
+    '''
     mtab = open('/etc/mtab', 'r')
     mounted = False
     for line in mtab.readlines():
@@ -49,6 +74,18 @@ def is_mounted(path):
 
 
 def get_path(path):
+    '''
+    Converts user entered path to absolute path.
+
+    Args:
+        path (str): user entered path such as '~/encfs/'
+
+    Returns:
+        absolute_path (str): /home/user/endfs
+
+    Raises:
+        OSError: if path does not exist.
+    '''
     path = os.path.abspath(os.path.realpath(os.path.expanduser(path)))
     if os.path.isdir(path):
         return path
@@ -57,7 +94,21 @@ def get_path(path):
 
 
 def run(crypt_path, mount_path, wrapped_prog):
+    '''
+    mounts encfs and starts another program. Waits until that program has
+    terminated then unmounts the encfs mount point. Can be executed multiple
+    times. In that case, the encfs filesystem will not unmount until all
+    programs started by encfswrapper have terminated.
 
+    Args:
+        * crypt_path (str): user entered path to the encrypted encfs data.
+        * mount_path (str): user entered path to the encfs mountpoint
+        * wrapped_progs (list): list of subprocess.Popen arguments to execute
+          the external program.
+
+    Example:
+        run('~/.encfs', '~/encfs/', ['zim', '--standalone'])
+    '''
     crypt_path = get_path(crypt_path)
     mount_path = get_path(mount_path)
 
@@ -97,14 +148,20 @@ def run(crypt_path, mount_path, wrapped_prog):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='mount encfs while '
-                                     'program runs')
+    '''
+    cli interface.
+    '''
+    parser = argparse.ArgumentParser(
+        description='mount encfs while COMMAND runs. Automatically unmount '
+        'encfs after COMMAND terminates ')
     parser.add_argument('rootDir', nargs=1, help='encfs encrypted directory')
     parser.add_argument('mountPoint', nargs=1, help='encfs mount point')
     parser.add_argument('command',
-                        metavar='command [options...]',
+                        metavar='COMMAND [options...]',
                         nargs=argparse.REMAINDER,
-                        help='command to run')
+                        help='command to run including its arguments '
+                             'and options.'
+                        )
     args = parser.parse_args()
     run(args.rootDir[0], args.mountPoint[0], args.command)
 
