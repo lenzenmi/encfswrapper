@@ -23,7 +23,7 @@ class Tkinter_input(tkinter.Tk):
     def __init__(self):
         tkinter.Tk.__init__(self)
         self.title('encfswrapper')
-        self.password = None
+        self.password = ''
 
         tkinter.Label(self, text='Please enter encfs password').pack()
         self.entry = tkinter.Entry(self, show='*')
