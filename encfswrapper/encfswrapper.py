@@ -20,22 +20,47 @@ class Tkinter_input(tkinter.Tk):
         * password (str): the password entered by the user.
     '''
 
-    def __init__(self):
+    def __init__(self, message=None):
         tkinter.Tk.__init__(self)
-        self.title('encfswrapper')
-        self.password = ''
+        self.title('Encfswrapper')
 
-        tkinter.Label(self, text='Please enter encfs password').pack()
-        self.entry = tkinter.Entry(self, show='*')
-        self.entry.pack()
+        self.password = ''
+        self.cancel = False
+
+        self.frame = tkinter.Frame(self)
+
+        if message:
+            tkinter.Label(self.frame,
+                          text=message,
+                          fg='red').grid(row=0, columnspan=2)
+
+        tkinter.Label(
+            self.frame,
+            text='Please enter your encfs password'
+        ).grid(row=1, columnspan=2)
+
+        self.entry = tkinter.Entry(self.frame, show='*')
+        self.entry.grid(row=2, columnspan=2)
         self.entry.focus()
 
         def getpassword():
             self.password = self.entry.get()
             self.destroy()
 
-        self.button = tkinter.Button(self, text='OK', command=getpassword)
-        self.button.pack()
+        self.button = tkinter.Button(self.frame,
+                                     text='OK',
+                                     command=getpassword)
+        self.button.grid(row=3)
+
+        def breakloop():
+            self.cancel = True
+            self.destroy()
+
+        tkinter.Button(self.frame,
+                       text='Cancel',
+                       command=breakloop).grid(row=3, column=1)
+
+        self.frame.pack()
 
         self.bind('<Return>', lambda key: getpassword())
         self.focus_set()
@@ -111,30 +136,43 @@ def run(crypt_path, mount_path, wrapped_prog):
     '''
     crypt_path = get_path(crypt_path)
     mount_path = get_path(mount_path)
+    if len(os.listdir(mount_path)) != 0:
+        raise OSError('Mount Path \'{}\' is not empty'.format(mount_path))
 
     md5 = hashlib.md5()
     md5.update(mount_path.encode('utf-8'))
     tmppath = (md5.hexdigest())
-
     tmp = tempfile.gettempdir()
 
     try:
         lockdir = os.path.join(
             tmp,
             'encfs-{}'.format(tmppath))
+        good_password = 1
+        message = None
+        cancel = False
         if not os.path.isdir(lockdir):
             os.mkdir(lockdir)
         lockfile = tempfile.mkstemp('', 'encfs', lockdir)
         if not is_mounted(mount_path):
-            try:
-                password = Tkinter_input()
-            except:
-                password = Shell_input()
-            encfs = subprocess.Popen(
-                ['/usr/bin/encfs', '--stdinpass', crypt_path, mount_path],
-                stdin=subprocess.PIPE,
-            )
-            encfs.communicate(input=password.password.encode('utf-8'))
+            while (good_password != 0) and (cancel == False):
+                try:
+                    password = Tkinter_input(message=message)
+
+                except:
+                    password = Shell_input()
+
+                encfs = subprocess.Popen(
+                    ['/usr/bin/encfs', '--stdinpass', crypt_path, mount_path],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE
+                )
+                message = encfs.communicate(
+                    input=password.password.encode('utf-8')
+                )[0].rstrip()
+
+                good_password = encfs.returncode
+                cancel = password.cancel
 
         if is_mounted(mount_path):
             subprocess.call(wrapped_prog)
