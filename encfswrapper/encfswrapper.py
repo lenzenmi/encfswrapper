@@ -159,24 +159,25 @@ def run(crypt_path, mount_path, wrapped_prog):
             os.mkdir(lockdir)
         lockfile = tempfile.mkstemp('', 'encfs', lockdir)
         if not is_mounted(mount_path):
-            while (bad_password) and (cancel == False):
+            while (bad_password):
                 try:
                     password = Tkinter_input(message=message)
-
                 except Exception:
                     password = Shell_input()
+                cancel = password.cancel
+                if cancel:
+                    break
 
                 encfs = subprocess.Popen(
-                    ['/usr/bin/encfs', '--stdinpass', crypt_path, mount_path],
+                    ['/usr/bin/env', 'encfs', '--stdinpass',
+                     crypt_path, mount_path],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE
                 )
                 message = encfs.communicate(
                     input=password.password.encode('utf-8')
                 )[0].rstrip()
-
                 bad_password = encfs.returncode
-                cancel = password.cancel
 
         if is_mounted(mount_path):
             subprocess.call(wrapped_prog, shell=True)
@@ -189,7 +190,8 @@ def run(crypt_path, mount_path, wrapped_prog):
         os.remove(lockfile[1])
 
         if is_mounted(mount_path) and len(os.listdir(lockdir)) == 0:
-            return_code = subprocess.call(['/usr/bin/fusermount',
+            return_code = subprocess.call(['/usr/bin/env',
+                                           'fusermount',
                                            '-u',
                                            mount_path])
             os.rmdir(lockdir)
@@ -204,8 +206,9 @@ def main():
     cli interface.
     '''
     parser = argparse.ArgumentParser(
-        description='mount encfs while COMMAND runs. Automatically unmount '
-        'encfs after COMMAND terminates ')
+        description='Mount an encfs filesystem while COMMAND runs.'
+        ' Automatically unmount the encfs filesystem after COMMAND terminates.'
+    )
     parser.add_argument('rootDir', nargs=1, help='encfs encrypted directory')
     parser.add_argument('mountPoint', nargs=1, help='encfs mount point')
     parser.add_argument('command',
