@@ -13,7 +13,7 @@ import tkinter
 import time
 
 
-class Tkinter_input(tkinter.Tk):
+class Tkinter_Input(tkinter.Tk):
     '''
     class to get password from the user using tkinter
 
@@ -71,7 +71,7 @@ class Tkinter_input(tkinter.Tk):
         self.mainloop()
 
 
-class Shell_input():
+class Shell_Input():
     '''
     class to get password from the user using shell
 
@@ -81,6 +81,7 @@ class Shell_input():
 
     def __init__(self):
         self.password = getpass.getpass('Enter encfs password: ')
+        self.cancel = False
 
 
 def is_mounted(path):
@@ -163,9 +164,9 @@ def run(crypt_path, mount_path, wrapped_prog):
         if not is_mounted(mount_path):
             while (bad_password):
                 try:
-                    password = Tkinter_input(message=message)
+                    password = Tkinter_Input(message=message)
                 except Exception:
-                    password = Shell_input()
+                    password = Shell_Input()
                 cancel = password.cancel
                 if cancel:
                     break
