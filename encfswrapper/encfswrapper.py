@@ -10,6 +10,7 @@ import os
 import subprocess
 import tempfile
 import tkinter
+import time
 
 
 class Tkinter_input(tkinter.Tk):
@@ -23,43 +24,46 @@ class Tkinter_input(tkinter.Tk):
     def __init__(self, message=None):
         tkinter.Tk.__init__(self)
         self.title('Encfswrapper')
-
         self.password = ''
         self.cancel = False
-
         self.frame = tkinter.Frame(self)
 
         if message:
-            tkinter.Label(self.frame,
-                          text=message,
-                          fg='red').grid(row=0, columnspan=2)
-
-        tkinter.Label(
+            self.label_msg = tkinter.Label(self.frame,
+                                           text=message,
+                                           fg='red')
+        self.label_pw = tkinter.Label(
             self.frame,
             text='Please enter your encfs password'
-        ).grid(row=1, columnspan=2)
-
+        )
         self.entry = tkinter.Entry(self.frame, show='*')
-        self.entry.grid(row=2, columnspan=2)
-        self.entry.focus()
 
         def getpassword():
             self.password = self.entry.get()
             self.destroy()
 
-        self.button = tkinter.Button(self.frame,
+        self.button_ok = tkinter.Button(self.frame,
                                      text='OK',
                                      command=getpassword)
-        self.button.grid(row=3)
 
         def breakloop():
             self.cancel = True
             self.destroy()
 
-        tkinter.Button(self.frame,
-                       text='Cancel',
-                       command=breakloop).grid(row=3, column=1)
+        self.button_cancel = tkinter.Button(self.frame,
+                                            text='Cancel',
+                                            command=breakloop)
 
+        # Pack Everything Up
+        if message:
+            self.label_msg.grid(row=0, columnspan=2)
+
+        self.label_pw.grid(row=1, columnspan=2)
+        self.entry.grid(row=2, columnspan=2)
+        self.button_ok.grid(row=3, column=0)
+        self.button_cancel.grid(row=3, column=1)
+
+        self.entry.focus()
         self.frame.pack()
 
         self.bind('<Return>', lambda key: getpassword())
@@ -148,18 +152,18 @@ def run(crypt_path, mount_path, wrapped_prog):
         lockdir = os.path.join(
             tmp,
             'encfs-{}'.format(tmppath))
-        good_password = 1
+        bad_password = 1
         message = None
         cancel = False
         if not os.path.isdir(lockdir):
             os.mkdir(lockdir)
         lockfile = tempfile.mkstemp('', 'encfs', lockdir)
         if not is_mounted(mount_path):
-            while (good_password != 0) and (cancel == False):
+            while (bad_password) and (cancel == False):
                 try:
                     password = Tkinter_input(message=message)
 
-                except:
+                except Exception:
                     password = Shell_input()
 
                 encfs = subprocess.Popen(
@@ -171,18 +175,28 @@ def run(crypt_path, mount_path, wrapped_prog):
                     input=password.password.encode('utf-8')
                 )[0].rstrip()
 
-                good_password = encfs.returncode
+                bad_password = encfs.returncode
                 cancel = password.cancel
 
         if is_mounted(mount_path):
-            subprocess.call(wrapped_prog)
+            subprocess.call(wrapped_prog, shell=True)
 
     finally:
+        # Give fuse a chance to finish mounting if wrapped_prog has a
+        # very shor run time
+        time.sleep(.5)
         os.close(lockfile[0])
         os.remove(lockfile[1])
+
         if is_mounted(mount_path) and len(os.listdir(lockdir)) == 0:
-            subprocess.call(['fusermount', '-u', mount_path])
+            return_code = subprocess.call(['/usr/bin/fusermount',
+                                           '-u',
+                                           mount_path])
             os.rmdir(lockdir)
+            if return_code:
+                raise OSError('failed to unmount {}'.format(mount_path))
+            else:
+                print('Successfully unmounted "{}"'.format(mount_path))
 
 
 def main():

@@ -2,3 +2,6 @@
 .pydevproject
 __pycache__
 docs/_build/*
+build
+dist
+*.egg-*
