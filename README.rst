@@ -28,7 +28,7 @@ Usage is pretty simple. just call encfswrapper like you would encfs but append t
 
 .. code:: bash
 
-    encfswrapper rootDir mountPoint (command [options...])
+    encfswrapper encfsDir mountPoint (command [options...])
     
 Useful Examples
 ---------------
