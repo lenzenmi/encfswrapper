@@ -183,12 +183,14 @@ def run(crypt_path, mount_path, wrapped_prog):
                 bad_password = encfs.returncode
 
         if is_mounted(mount_path):
-            subprocess.call(wrapped_prog, shell=True)
+            wrapped_prog.insert(0, '/usr/bin/env')
+            print(wrapped_prog)
+            subprocess.call(wrapped_prog)
 
     finally:
         # Give fuse a chance to finish mounting if wrapped_prog has a
-        # very shor run time
-        time.sleep(1)
+        # very shor run time or programs that close slowly
+        time.sleep(.5)
         os.close(lockfile[0])
         os.remove(lockfile[1])
 
