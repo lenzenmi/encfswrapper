@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+#
+# Script to launch the encfswrapper module
+#
+#
+import encfswrapper.encfswrapper
+
+encfswrapper.encfswrapper.main()

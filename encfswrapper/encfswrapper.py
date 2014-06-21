@@ -208,10 +208,12 @@ def main():
     cli interface.
     '''
     parser = argparse.ArgumentParser(
-        description='Mount an encfs filesystem while COMMAND runs.'
-        ' Automatically unmount the encfs filesystem after COMMAND terminates.'
+        description=('Mount an encfs filesystem while COMMAND runs.'
+                     ' Automatically unmount the encfs filesystem after'
+                     ' COMMAND terminates.'),
+        usage='%(prog)s [-h] encfsDir mountPoint COMMAND [options...]'
     )
-    parser.add_argument('rootDir', nargs=1, help='encfs encrypted directory')
+    parser.add_argument('encfsDir', nargs=1, help='encfs encrypted directory')
     parser.add_argument('mountPoint', nargs=1, help='encfs mount point')
     parser.add_argument('command',
                         metavar='COMMAND [options...]',
@@ -220,7 +222,7 @@ def main():
                              'and options.'
                         )
     args = parser.parse_args()
-    run(args.rootDir[0], args.mountPoint[0], args.command)
+    run(args.encfsDir[0], args.mountPoint[0], args.command)
 
 
 if __name__ == '__main__':
