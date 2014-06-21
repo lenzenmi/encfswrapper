@@ -147,9 +147,9 @@ def run(crypt_path, mount_path, wrapped_prog):
     lockdir = os.path.join(tmp, 'encfs-{}'.format(tmppath))
 
     if len(os.listdir(mount_path)) != 0:
-        if (is_mounted(mount_path)) and (len(os.listdir(lockdir)) > 0):
-            pass
-        else:
+        if not (is_mounted(mount_path)
+                and os.path.isdir(lockdir)
+                and (len(os.listdir(lockdir)) > 0)):
             raise OSError('Mount Path \'{}\' is not empty'.format(mount_path))
 
     try:
