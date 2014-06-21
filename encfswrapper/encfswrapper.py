@@ -184,7 +184,6 @@ def run(crypt_path, mount_path, wrapped_prog):
 
         if is_mounted(mount_path):
             wrapped_prog.insert(0, '/usr/bin/env')
-            print(wrapped_prog)
             subprocess.call(wrapped_prog)
 
     finally:
