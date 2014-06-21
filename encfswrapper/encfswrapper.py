@@ -140,24 +140,26 @@ def run(crypt_path, mount_path, wrapped_prog):
     '''
     crypt_path = get_path(crypt_path)
     mount_path = get_path(mount_path)
-    if len(os.listdir(mount_path)) != 0:
-        raise OSError('Mount Path \'{}\' is not empty'.format(mount_path))
-
     md5 = hashlib.md5()
     md5.update(mount_path.encode('utf-8'))
     tmppath = (md5.hexdigest())
     tmp = tempfile.gettempdir()
+    lockdir = os.path.join(tmp, 'encfs-{}'.format(tmppath))
+
+    if len(os.listdir(mount_path)) != 0:
+        if (is_mounted(mount_path)) and (len(os.listdir(lockdir)) > 0):
+            pass
+        else:
+            raise OSError('Mount Path \'{}\' is not empty'.format(mount_path))
 
     try:
-        lockdir = os.path.join(
-            tmp,
-            'encfs-{}'.format(tmppath))
         bad_password = 1
         message = None
         cancel = False
         if not os.path.isdir(lockdir):
             os.mkdir(lockdir)
         lockfile = tempfile.mkstemp('', 'encfs', lockdir)
+
         if not is_mounted(mount_path):
             while (bad_password):
                 try:
