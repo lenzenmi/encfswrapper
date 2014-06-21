@@ -188,7 +188,7 @@ def run(crypt_path, mount_path, wrapped_prog):
     finally:
         # Give fuse a chance to finish mounting if wrapped_prog has a
         # very shor run time
-        time.sleep(.5)
+        time.sleep(1)
         os.close(lockfile[0])
         os.remove(lockfile[1])
 
