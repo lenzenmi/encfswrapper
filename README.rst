@@ -1,13 +1,13 @@
-**encfswrapper** mounts an `encfs filesystem`__ while another program executes. When all instances of programs started by encfswrapper using the same encfs mount point have terminated, the encfs filesystem is unmounted automatically.
+**encfswrapper** mounts an `encfs filesystem <encfs_>`_ while another program executes. When all instances of programs started by encfswrapper using the same encfs mount point have terminated, the encfs filesystem is unmounted automatically.
 
-__ encfs_
-.. _encfs: http://www.arg0.net/encfs
 
 ========
 Requires
 ========
-* encfs_
+* `encfs`_
 * Python 3.x
+
+.. _encfs: http://www.arg0.net/encfs
 
 ============
 Installation
@@ -15,7 +15,8 @@ Installation
 
 .. code:: bash
     
-    git clone git://github.com/lenzenmi/btrsnap.git
+    git clone https://github.com/lenzenmi/encfswrapper.git
+    cd encfswrapper
     python setup.py install
     
 =====
@@ -37,7 +38,7 @@ Zim
 
 `Zim <http://zim-wiki.org/>`_ is a desktop wiki. It's lovely for making beautiful notes. It uses a simple markup language and stores everything in plain text files that can easily be read with any text editor.
 
-Once you have a lot of useful notes, it may be nice to back them up on the cloud somewhere using a tool like `rsync <http://rsync.samba.org/>`_. The problem is that once you start sending your private notes out into the internet, you probably want it encrypted.
+Once you have a lot of useful notes, it may be nice to back them up on the cloud somewhere using a tool like `rsync <http://rsync.samba.org/>`_. The problem is that once you start sending your private notes out onto the internet, they become public. If you want your private notes to stay private, you'll need to encrypt them.
 
 By default, zim stores your notes in your home folder in a directory called Notes. Lets move that.
 
@@ -84,9 +85,10 @@ Now we can use encfswrapper to automate mounting this folder when we start zim.
 
     encfswrapper ~/.Notes ~/Notes zim --standalone
 
-The standalone option is required to keep zim from demonizing which would cause encfswrapper to unmount your encfs mount point.
+.. note:: 
+    The standalone option is required to keep zim from daemonizing which would cause encfswrapper to unmount your encfs mount point.
 
-**Hurray:** zim should now be working normally and all of your stored notes will be encrypted! It's now safe to replicate your ~/.Notes folder anywhere on the internet.
+**Hooray!** Zim should now be working normally and all of your stored notes will be encrypted! It's now safe to replicate your ~/.Notes folder anywhere on the internet.
 
 A bit more advanced
 ^^^^^^^^^^^^^^^^^^^
