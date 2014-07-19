@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/env python3
 '''
 A command line program to mount an encrypted encfs filesystem while another
 program executes.
@@ -172,7 +172,7 @@ def run(crypt_path, mount_path, wrapped_prog):
                     break
 
                 encfs = subprocess.Popen(
-                    ['/usr/bin/env', 'encfs', '--stdinpass',
+                    ['encfs', '--stdinpass',
                      crypt_path, mount_path],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE
@@ -183,7 +183,6 @@ def run(crypt_path, mount_path, wrapped_prog):
                 bad_password = encfs.returncode
 
         if is_mounted(mount_path):
-            wrapped_prog.insert(0, '/usr/bin/env')
             subprocess.call(wrapped_prog)
 
     finally:
@@ -194,8 +193,7 @@ def run(crypt_path, mount_path, wrapped_prog):
         os.remove(lockfile[1])
 
         if is_mounted(mount_path) and len(os.listdir(lockdir)) == 0:
-            return_code = subprocess.call(['/usr/bin/env',
-                                           'fusermount',
+            return_code = subprocess.call(['fusermount',
                                            '-u',
                                            mount_path])
             os.rmdir(lockdir)
