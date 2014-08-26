@@ -13,19 +13,51 @@ import tkinter
 import time
 
 
+class TkinterMsg(tkinter.Tk):
+    '''
+    shows a simple messagebox
+
+    :Args:
+        * title (str) - tkinter title text
+        * message (str) - message text
+    '''
+    def __init__(self, title=None, message=None):
+        super().__init__()
+        self.title(title)
+        # Declare widgets
+        self.frame = tkinter.Frame(self)
+        self.msg = tkinter.Label(self.frame,
+                                 text=message,
+                                 fg='red')
+        self.button = tkinter.Button(self.frame,
+                                     text='OK',
+                                     command=self.destroy)
+        # Pack everything up
+        self.frame.pack()
+        self.msg.pack()
+        self.button.pack()
+        self.bind('<Return>', lambda key: self.destroy())
+
+        self.mainloop()
+
+
 class Tkinter_Input(tkinter.Tk):
     '''
     class to get password from the user using tkinter
 
-    Attributes:
-        * password (str): the password entered by the user.
+    :Args:
+        * message (str) - error message text displayed in red
+
+    :Attr:
+        * password (str) - the password entered by the user.
+        * canceled (bool) - did the user push the cancel button
     '''
 
     def __init__(self, message=None):
         tkinter.Tk.__init__(self)
         self.title('Encfswrapper')
         self.password = ''
-        self.cancel = False
+        self.canceled = False
         self.frame = tkinter.Frame(self)
 
         if message:
@@ -35,7 +67,7 @@ class Tkinter_Input(tkinter.Tk):
         self.label_pw = tkinter.Label(
             self.frame,
             text='Please enter your encfs password'
-        )
+            )
         self.entry = tkinter.Entry(self.frame, show='*')
 
         def getpassword():
@@ -47,7 +79,7 @@ class Tkinter_Input(tkinter.Tk):
                                      command=getpassword)
 
         def breakloop():
-            self.cancel = True
+            self.canceled = True
             self.destroy()
 
         self.button_cancel = tkinter.Button(self.frame,
@@ -75,23 +107,24 @@ class Shell_Input():
     '''
     class to get password from the user using shell
 
-    Attributes:
-        * password (str): the password entered by the user.
+    :Attr:
+        * password (str) - the password entered by the user.
+        * canceled (bool) - always False
     '''
 
     def __init__(self):
         self.password = getpass.getpass('Enter encfs password: ')
-        self.cancel = False
+        self.canceled = False
 
 
 def is_mounted(path):
     '''
     Test if the encfs mount path is in /etc/mtab.
 
-    Args:
+    :Args:
         * path (str): absolute path to the encfs mount
 
-    Returns:
+    :Returns:
         * (bool): True = mounted, False = not-mounted
     '''
     mtab = open('/etc/mtab', 'r')
@@ -107,13 +140,13 @@ def get_path(path):
     '''
     Converts user entered path to absolute path.
 
-    Args:
+    :Args:
         path (str): user entered path such as '~/encfs/'
 
-    Returns:
+    :Returns:
         absolute_path (str): /home/user/endfs
 
-    Raises:
+    :Raises:
         OSError: if path does not exist.
     '''
     path = os.path.abspath(os.path.realpath(os.path.expanduser(path)))
@@ -130,7 +163,7 @@ def run(crypt_path, mount_path, wrapped_prog):
     times. In that case, the encfs filesystem will not unmount until all
     programs started by encfswrapper have terminated.
 
-    Args:
+    :Args:
         * crypt_path (str): user entered path to the encrypted encfs data.
         * mount_path (str): user entered path to the encfs mountpoint
         * wrapped_progs (list): list of subprocess.Popen arguments to execute
@@ -147,16 +180,23 @@ def run(crypt_path, mount_path, wrapped_prog):
     tmp = tempfile.gettempdir()
     lockdir = os.path.join(tmp, 'encfs-{}'.format(tmppath))
 
+    # Check to see if the mount path is empty.
     if len(os.listdir(mount_path)) != 0:
         if not (is_mounted(mount_path)
                 and os.path.isdir(lockdir)
                 and (len(os.listdir(lockdir)) > 0)):
-            raise OSError('Mount Path \'{}\' is not empty'.format(mount_path))
+            msg = 'Mount Path \'{}\' is not empty'.format(mount_path)
+            try:
+                TkinterMsg(title='Mount Error',
+                           message=msg)
+            except:
+                pass
+            raise OSError(msg)
 
     try:
         bad_password = 1
         message = None
-        cancel = False
+        canceled = False
         if not os.path.isdir(lockdir):
             os.mkdir(lockdir)
         lockfile = tempfile.mkstemp('', 'encfs', lockdir)
@@ -167,8 +207,8 @@ def run(crypt_path, mount_path, wrapped_prog):
                     password = Tkinter_Input(message=message)
                 except Exception:
                     password = Shell_Input()
-                cancel = password.cancel
-                if cancel:
+                canceled = password.canceled
+                if canceled:
                     break
 
                 encfs = subprocess.Popen(
@@ -187,7 +227,7 @@ def run(crypt_path, mount_path, wrapped_prog):
 
     finally:
         # Give fuse a chance to finish mounting if wrapped_prog has a
-        # very shor run time or programs that close slowly
+        # very short run time or programs that close slowly
         time.sleep(.5)
         os.close(lockfile[0])
         os.remove(lockfile[1])
@@ -198,7 +238,13 @@ def run(crypt_path, mount_path, wrapped_prog):
                                            mount_path])
             os.rmdir(lockdir)
             if return_code:
-                raise OSError('failed to unmount {}'.format(mount_path))
+                msg = 'failed to unmount {}'.format(mount_path)
+                try:
+                    TkinterMsg(title='OSError',
+                               message=msg)
+                except:
+                    pass
+                raise OSError(msg)
             else:
                 print('Successfully unmounted "{}"'.format(mount_path))
 
