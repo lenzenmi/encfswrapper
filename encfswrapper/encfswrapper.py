@@ -11,7 +11,6 @@ import subprocess
 import tempfile
 try:    #removes T(t)kinter issue between 2.x and 3.x
     import Tkinter as tk
-    print "imported Tkinter"
 except ImportError:
     import tkinter as tk
 import time
