@@ -9,27 +9,30 @@ import hashlib
 import os
 import subprocess
 import tempfile
-import tkinter
+try:    #removes T(t)kinter issue between 2.x and 3.x
+    import Tkinter as tk
+    print "imported Tkinter"
+except ImportError:
+    import tkinter as tk
 import time
 
 
-class TkinterMsg(tkinter.Tk):
+class TkinterMsg(tk.Tk):
     '''
     shows a simple messagebox
-
     :Args:
-        * title (str) - tkinter title text
+        * title (str) - tk title text
         * message (str) - message text
     '''
     def __init__(self, title=None, message=None):
         super().__init__()
         self.title(title)
         # Declare widgets
-        self.frame = tkinter.Frame(self)
-        self.msg = tkinter.Label(self.frame,
+        self.frame = tk.Frame(self)
+        self.msg = tk.Label(self.frame,
                                  text=message,
                                  fg='red')
-        self.button = tkinter.Button(self.frame,
+        self.button = tk.Button(self.frame,
                                      text='OK',
                                      command=self.destroy)
         # Pack everything up
@@ -41,40 +44,38 @@ class TkinterMsg(tkinter.Tk):
         self.mainloop()
 
 
-class Tkinter_Input(tkinter.Tk):
+class Tkinter_Input(tk.Tk):
     '''
-    class to get password from the user using tkinter
-
+    class to get password from the user using tk
     :Args:
         * message (str) - error message text displayed in red
-
     :Attr:
         * password (str) - the password entered by the user.
         * canceled (bool) - did the user push the cancel button
     '''
 
     def __init__(self, message=None):
-        tkinter.Tk.__init__(self)
+        tk.Tk.__init__(self)
         self.title('Encfswrapper')
         self.password = ''
         self.canceled = False
-        self.frame = tkinter.Frame(self)
+        self.frame = tk.Frame(self)
 
         if message:
-            self.label_msg = tkinter.Label(self.frame,
+            self.label_msg = tk.Label(self.frame,
                                            text=message,
                                            fg='red')
-        self.label_pw = tkinter.Label(
+        self.label_pw = tk.Label(
             self.frame,
             text='Please enter your encfs password'
             )
-        self.entry = tkinter.Entry(self.frame, show='*')
+        self.entry = tk.Entry(self.frame, show='*')
 
         def getpassword():
             self.password = self.entry.get()
             self.destroy()
 
-        self.button_ok = tkinter.Button(self.frame,
+        self.button_ok = tk.Button(self.frame,
                                      text='OK',
                                      command=getpassword)
 
@@ -82,7 +83,7 @@ class Tkinter_Input(tkinter.Tk):
             self.canceled = True
             self.destroy()
 
-        self.button_cancel = tkinter.Button(self.frame,
+        self.button_cancel = tk.Button(self.frame,
                                             text='Cancel',
                                             command=breakloop)
 
@@ -106,7 +107,6 @@ class Tkinter_Input(tkinter.Tk):
 class Shell_Input():
     '''
     class to get password from the user using shell
-
     :Attr:
         * password (str) - the password entered by the user.
         * canceled (bool) - always False
@@ -120,10 +120,8 @@ class Shell_Input():
 def is_mounted(path):
     '''
     Test if the encfs mount path is in /etc/mtab.
-
     :Args:
         * path (str): absolute path to the encfs mount
-
     :Returns:
         * (bool): True = mounted, False = not-mounted
     '''
@@ -139,13 +137,10 @@ def is_mounted(path):
 def get_path(path):
     '''
     Converts user entered path to absolute path.
-
     :Args:
         path (str): user entered path such as '~/encfs/'
-
     :Returns:
         absolute_path (str): /home/user/endfs
-
     :Raises:
         OSError: if path does not exist.
     '''
@@ -162,13 +157,11 @@ def run(crypt_path, mount_path, wrapped_prog):
     terminated then unmounts the encfs mount point. Can be executed multiple
     times. In that case, the encfs filesystem will not unmount until all
     programs started by encfswrapper have terminated.
-
     :Args:
         * crypt_path (str): user entered path to the encrypted encfs data.
         * mount_path (str): user entered path to the encfs mountpoint
         * wrapped_progs (list): list of subprocess.Popen arguments to execute
           the external program.
-
     Example:
         run('~/.encfs', '~/encfs/', ['zim', '--standalone'])
     '''
