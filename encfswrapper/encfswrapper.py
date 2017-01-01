@@ -9,19 +9,21 @@ import hashlib
 import os
 import subprocess
 import tempfile
-try:    #removes T(t)kinter issue between 2.x and 3.x
+import time
+
+# python 2.x 3.x compat
+try:
     import Tkinter as tk
 except ImportError:
     import tkinter as tk
-import time
 
 
-class TkinterMsg(tk.Tk):
+class Message(tk.Tk):
     '''
-    shows a simple messagebox
-    :Args:
-        * title (str) - tk title text
-        * message (str) - message text
+    Shows a simple messagebox
+
+    :param str title: title text
+    :param str message: message text
     '''
     def __init__(self, title=None, message=None):
         super().__init__()
@@ -29,11 +31,11 @@ class TkinterMsg(tk.Tk):
         # Declare widgets
         self.frame = tk.Frame(self)
         self.msg = tk.Label(self.frame,
-                                 text=message,
-                                 fg='red')
+                            text=message,
+                            fg='red')
         self.button = tk.Button(self.frame,
-                                     text='OK',
-                                     command=self.destroy)
+                                text='OK',
+                                command=self.destroy)
         # Pack everything up
         self.frame.pack()
         self.msg.pack()
@@ -43,14 +45,11 @@ class TkinterMsg(tk.Tk):
         self.mainloop()
 
 
-class Tkinter_Input(tk.Tk):
+class Input(tk.Tk):
     '''
-    class to get password from the user using tk
-    :Args:
-        * message (str) - error message text displayed in red
-    :Attr:
-        * password (str) - the password entered by the user.
-        * canceled (bool) - did the user push the cancel button
+    Password input box
+
+    :param str message: error message text displayed in red
     '''
 
     def __init__(self, message=None):
@@ -60,31 +59,29 @@ class Tkinter_Input(tk.Tk):
         self.canceled = False
         self.frame = tk.Frame(self)
 
+        # display optional message
         if message:
             self.label_msg = tk.Label(self.frame,
-                                           text=message,
-                                           fg='red')
+                                      text=message,
+                                      fg='red')
+
+        # display main text
         self.label_pw = tk.Label(
             self.frame,
             text='Please enter your encfs password'
-            )
+        )
+
+        # password entry box
         self.entry = tk.Entry(self.frame, show='*')
 
-        def getpassword():
-            self.password = self.entry.get()
-            self.destroy()
-
+        # connect buttons
         self.button_ok = tk.Button(self.frame,
-                                     text='OK',
-                                     command=getpassword)
-
-        def breakloop():
-            self.canceled = True
-            self.destroy()
+                                   text='OK',
+                                   command=self._get_password)
 
         self.button_cancel = tk.Button(self.frame,
-                                            text='Cancel',
-                                            command=breakloop)
+                                       text='Cancel',
+                                       command=self._break_loop)
 
         # Pack Everything Up
         if message:
@@ -98,19 +95,26 @@ class Tkinter_Input(tk.Tk):
         self.entry.focus()
         self.frame.pack()
 
-        self.bind('<Return>', lambda key: getpassword())
+        self.bind('<Return>', lambda key: self._get_password())
         self.focus_set()
         self.mainloop()
 
+    def _get_password(self):
+        self.password = self.entry.get()
+        self.destroy()
 
-class Shell_Input():
+    def _break_loop(self):
+        self.canceled = True
+        self.destroy()
+
+
+class ShellInput():
     '''
-    class to get password from the user using shell
+    Get password from the user using shell
     :Attr:
         * password (str) - the password entered by the user.
         * canceled (bool) - always False
     '''
-
     def __init__(self):
         self.password = getpass.getpass('Enter encfs password: ')
         self.canceled = False
@@ -119,6 +123,7 @@ class Shell_Input():
 def is_mounted(path):
     '''
     Test if the encfs mount path is in /etc/mtab.
+
     :Args:
         * path (str): absolute path to the encfs mount
     :Returns:
@@ -136,6 +141,7 @@ def is_mounted(path):
 def get_path(path):
     '''
     Converts user entered path to absolute path.
+
     :Args:
         path (str): user entered path such as '~/encfs/'
     :Returns:
@@ -174,13 +180,13 @@ def run(crypt_path, mount_path, wrapped_prog):
 
     # Check to see if the mount path is empty.
     if len(os.listdir(mount_path)) != 0:
-        if not (is_mounted(mount_path)
-                and os.path.isdir(lockdir)
-                and (len(os.listdir(lockdir)) > 0)):
+        if not (is_mounted(mount_path) and
+                os.path.isdir(lockdir) and
+                len(os.listdir(lockdir)) > 0):
             msg = 'Mount Path \'{}\' is not empty'.format(mount_path)
             try:
-                TkinterMsg(title='Mount Error',
-                           message=msg)
+                Message(title='Mount Error',
+                        message=msg)
             except:
                 pass
             raise OSError(msg)
@@ -196,9 +202,9 @@ def run(crypt_path, mount_path, wrapped_prog):
         if not is_mounted(mount_path):
             while (bad_password):
                 try:
-                    password = Tkinter_Input(message=message)
+                    password = Input(message=message)
                 except Exception:
-                    password = Shell_Input()
+                    password = ShellInput()
                 canceled = password.canceled
                 if canceled:
                     break
@@ -232,8 +238,8 @@ def run(crypt_path, mount_path, wrapped_prog):
             if return_code:
                 msg = 'failed to unmount {}'.format(mount_path)
                 try:
-                    TkinterMsg(title='OSError',
-                               message=msg)
+                    Message(title='OSError',
+                            message=msg)
                 except:
                     pass
                 raise OSError(msg)
